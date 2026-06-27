@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:;" />
+  <title>네이버 블로그 자동화</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>네이버 블로그 자동화</h1>
+    <span class="subtitle">Electron Automation Suite</span>
+  </header>
+
+  <!-- 기능별 탭 -->
+  <nav class="tabs" id="tabs">
+    <button class="tab active" data-tab="login">🔐 네이버 로그인</button>
+    <button class="tab" data-tab="write">✍️ 글쓰기</button>
+  </nav>
+
+  <main class="content">
+    <!-- 로그인 탭 -->
+    <section class="panel active" data-panel="login">
+      <div class="card">
+        <h2>네이버 로그인</h2>
+        <p class="hint">실제 브라우저 창을 띄워 사람처럼 키 입력으로 로그인합니다.</p>
+
+        <label class="field">
+          <span>저장된 계정 불러오기</span>
+          <div class="row">
+            <select id="savedAccounts">
+              <option value="">— 직접 입력 —</option>
+            </select>
+            <button class="btn-ghost" id="deleteAccountBtn" title="선택한 계정 삭제">🗑</button>
+          </div>
+        </label>
+
+        <label class="field">
+          <span>아이디</span>
+          <input type="text" id="naverId" placeholder="네이버 아이디" autocomplete="off" spellcheck="false" />
+        </label>
+
+        <label class="field">
+          <span>비밀번호</span>
+          <div class="row">
+            <input type="password" id="naverPw" placeholder="비밀번호" autocomplete="off" />
+            <button class="btn-ghost" id="togglePw" title="비밀번호 표시/숨김">👁</button>
+          </div>
+        </label>
+
+        <div class="options">
+          <label class="check">
+            <input type="checkbox" id="saveCreds" />
+            <span>로그인 성공 시 아이디·비밀번호 저장</span>
+          </label>
+          <label class="check">
+            <input type="checkbox" id="showBrowser" checked />
+            <span>브라우저 창 보이기</span>
+          </label>
+        </div>
+
+        <button class="btn-primary" id="loginBtn">로그인 실행</button>
+
+        <div class="status" id="status" aria-live="polite">
+          <div class="status-dot idle" id="statusDot"></div>
+          <div class="status-text" id="statusText">대기 중</div>
+        </div>
+
+        <div class="log" id="log"></div>
+      </div>
+    </section>
+
+    <!-- 글쓰기 탭 -->
+    <section class="panel" data-panel="write">
+      <div class="card wide">
+        <h2>GPT 글쓰기</h2>
+        <p class="hint">blog.md 규칙 + 업로드 사진 + 프롬프트로 글을 생성합니다.</p>
+
+        <div class="ai-badge" id="aiBadge">GPT 키 확인 중...</div>
+
+        <label class="field">
+          <span>핵심 키워드 / 주제</span>
+          <input type="text" id="kw" placeholder="예: 청년 월세 지원 신청 방법" autocomplete="off" />
+        </label>
+
+        <label class="field">
+          <span>내 실제 경험 한 줄 (E-A-T, 필수 반영)</span>
+          <input type="text" id="exp" placeholder='예: "실제 신청해 보니 5분도 안 걸렸음"' autocomplete="off" />
+        </label>
+
+        <label class="field">
+          <span>내 평점 (이 점수와 이유가 글 논조에 반영됩니다)</span>
+          <div class="rating" id="rating">
+            <span class="star" data-v="1">★</span>
+            <span class="star" data-v="2">★</span>
+            <span class="star" data-v="3">★</span>
+            <span class="star" data-v="4">★</span>
+            <span class="star" data-v="5">★</span>
+            <span class="rating-label" id="ratingLabel">선택 안 함</span>
+          </div>
+        </label>
+
+        <label class="field">
+          <span>평점 이유 (한 줄)</span>
+          <input type="text" id="ratingReason" placeholder="예: 경치는 최고인데 주말 인파가 너무 많음" autocomplete="off" />
+        </label>
+
+        <label class="check" style="margin:4px 0 10px;">
+          <input type="checkbox" id="connectEnabled" />
+          <span>네이버 쇼핑 커넥트 — 공정위 문구 자동 추가 (글 맨 위)</span>
+        </label>
+
+        <label class="field">
+          <span>상품 링크 (한 줄에 하나 · "상품명 | URL" 또는 URL만)</span>
+          <textarea id="products" rows="3" placeholder="예시
+등산스틱 추천 | https://link.naver.com/...
+방수 자켓 | https://link.naver.com/..."></textarea>
+        </label>
+
+        <label class="field">
+          <span>추가 지시 프롬프트 (선택)</span>
+          <textarea id="prompt" rows="3" placeholder="톤, 강조할 점, 타깃 독자 등 자유롭게 입력"></textarea>
+        </label>
+
+        <label class="field">
+          <span>이미지 업로드 (번호 순서대로 [IMG1], [IMG2]... 에 매핑)</span>
+          <input type="file" id="imgInput" accept="image/*" multiple />
+          <div class="thumbs" id="thumbs"></div>
+        </label>
+
+        <button class="btn-primary" id="genBtn">GPT로 글 생성</button>
+
+        <div class="status">
+          <div class="status-dot idle" id="genDot"></div>
+          <div class="status-text" id="genText">대기 중</div>
+        </div>
+
+        <label class="field" style="margin-top:16px;">
+          <span>제목 (수정 가능)</span>
+          <input type="text" id="resultTitle" placeholder="생성된 제목이 여기에 표시됩니다." />
+        </label>
+
+        <label class="field">
+          <span>본문 (수정 가능 · [IMGn] 토큰을 옮기면 미리보기도 바뀝니다)</span>
+          <textarea id="resultBody" rows="16" placeholder="생성된 본문이 여기에 표시됩니다." spellcheck="false"></textarea>
+        </label>
+
+        <label class="field">
+          <span>미리보기 (사진이 본문 어디에 들어가는지 육안 확인)</span>
+          <div class="preview" id="preview"><span class="pv-empty">본문이 생성되면 여기서 사진 위치를 확인할 수 있습니다.</span></div>
+        </label>
+
+        <div class="row">
+          <button class="btn-ghost wide-btn" id="copyBtn">📋 복사</button>
+          <button class="btn-ghost wide-btn" id="openWriteBtn">➡️ 글쓰기 페이지 열기</button>
+        </div>
+
+        <button class="btn-primary" id="insertBtn" style="margin-top:10px;">📝 에디터에 글 입력</button>
+
+        <hr class="divider" />
+        <h3 class="sub-h">발행 설정</h3>
+
+        <label class="field">
+          <span>카테고리 (GPT 추천 + 직접수정)</span>
+          <div class="row">
+            <select id="categorySel">
+              <option value="">— 카테고리를 불러오세요 —</option>
+            </select>
+            <button class="btn-ghost" id="loadCatBtn" title="내 블로그 카테고리 불러오기">↻ 불러오기</button>
+          </div>
+        </label>
+
+        <label class="field">
+          <span>태그 (콤마로 구분, GPT 자동생성)</span>
+          <input type="text" id="tagsInput" placeholder="예: 관악산, 등산코스, 서울근교등산" autocomplete="off" />
+        </label>
+
+        <label class="field">
+          <span>공개 설정</span>
+          <select id="visibilitySel">
+            <option value="전체공개">전체공개</option>
+            <option value="이웃공개">이웃공개</option>
+            <option value="서로이웃공개">서로이웃공개</option>
+            <option value="비공개">비공개</option>
+          </select>
+        </label>
+
+        <label class="check" style="margin-bottom:12px;">
+          <input type="checkbox" id="autoPublish" />
+          <span>✓발행 버튼까지 자동으로 눌러 즉시 게시 (체크 안 하면 발행 직전까지만 세팅)</span>
+        </label>
+
+        <button class="btn-primary" id="publishBtn">🚀 발행 설정 적용 / 발행하기</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

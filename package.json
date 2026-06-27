@@ -1,0 +1,42 @@
+{
+  "name": "naver-blog-automation",
+  "version": "0.1.0",
+  "description": "네이버 블로그 자동화 데스크톱 프로그램 (Electron)",
+  "main": "main.js",
+  "author": "ys_note91",
+  "license": "MIT",
+  "scripts": {
+    "start": "node launch.js",
+    "dev": "node launch.js --enable-logging",
+    "dist": "electron-packager . 네이버블로그자동화 --platform=win32 --arch=x64 --out=dist --overwrite --extra-resource=blog.md --extra-resource=default.env --ignore=\"^/dist\" --ignore=\"\\.env$\" --ignore=\"^/default\\.env\""
+  },
+  "build": {
+    "appId": "com.naverblog.automation",
+    "productName": "네이버블로그자동화",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      "blog.md",
+      "default.env"
+    ],
+    "win": {
+      "target": "portable"
+    },
+    "portable": {
+      "artifactName": "네이버블로그자동화.exe"
+    }
+  },
+  "devDependencies": {
+    "@electron/packager": "^20.0.1",
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  }
+}
